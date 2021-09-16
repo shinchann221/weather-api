@@ -1,0 +1,45 @@
+name: Containerize, push to Github
+on:
+  release:
+    types: [created]
+
+env:
+  IMAGE: weather-api
+  CR_PAT: ${{ secrets.CR_PAT }}
+
+
+jobs:
+  build-and-push:
+    name: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Github
+        run: |
+          echo $CR_PAT | docker login ghcr.io -u Neem-Tree-Agro-Solutions --password-stdin
+          
+
+      - name: Get Release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: docker-build
+        run: |-
+          docker build \
+            --tag "ghcr.io/neem-tree-agro-solutions/$IMAGE:${{ steps.get_release.outputs.tag_name }}" \
+            --tag "ghcr.io/neem-tree-agro-solutions/$IMAGE:latest" \
+            .
+          
+      - name: publish
+        run: |-
+          docker push "ghcr.io/neem-tree-agro-solutions/$IMAGE:${{ steps.get_release.outputs.tag_name }}"
+
+      - name: publish-latest
+        run: |-
+          docker push "ghcr.io/neem-tree-agro-solutions/$IMAGE:latest"
