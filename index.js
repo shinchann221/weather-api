@@ -1,6 +1,8 @@
 const express = require('express');
 const converter = require('json-2-csv');
 const request = require('request');
+const db = require('./initDB');
+
 
 //Express Server Config
 const app = express();
@@ -13,7 +15,8 @@ app.get('/', function (req, res) {
 
     const lat = req.query.lat;
     const lon = req.query.lon;
-    console.log(lat+lon);
+    let today = new Date();
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
     let url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&excude=minutely&appid=${apiKey}&units=metric`;
 
@@ -21,6 +24,8 @@ app.get('/', function (req, res) {
         if (err) {
             res.sendStatus(500);
         } else {
+            db.collection('api-weather-data').insertOne(body);
+            db.collection('weather-api-logs').insertOne({'date': today,'lat': lat,'lon': lon,'ip': ip});
             let weather = JSON.parse(body);
             converter.json2csv(weather, (err, csv) => {
                 if (err) {
