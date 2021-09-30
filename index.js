@@ -16,7 +16,7 @@ app.get('/', function (req, res) {
     const lat = req.query.lat;
     const lon = req.query.lon;
     let today = new Date();
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     let url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&excude=minutely&appid=${apiKey}&units=metric`;
 
@@ -24,9 +24,10 @@ app.get('/', function (req, res) {
         if (err) {
             res.sendStatus(500);
         } else {
-            db.collection('api-weather-data').insertOne(body);
-            db.collection('weather-api-logs').insertOne({'date': today,'lat': lat,'lon': lon,'ip': ip});
             let weather = JSON.parse(body);
+            db.collection('weather-api-data').insertOne(weather);
+            db.collection('weather-api-logs').insertOne({'date': today,'lat': lat,'lon': lon,'ip': ip});
+            
             converter.json2csv(weather, (err, csv) => {
                 if (err) {
                     res.send('failed to convert to csv').status(500);
