@@ -1,5 +1,4 @@
 const express = require('express');
-const converter = require('json-2-csv');
 const request = require('request');
 const db = require('./initDB');
 
@@ -15,7 +14,12 @@ app.get('/', function (req, res) {
 
     const lat = req.query.lat;
     const lon = req.query.lon;
-    let today = new Date();
+    var currentTime = new Date();
+
+    var currentOffset = currentTime.getTimezoneOffset();
+    var today = new Date(currentTime.getTime() + (330 + currentOffset) * 60000);
+
+    
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     let url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&excude=minutely&appid=${apiKey}&units=metric`;
@@ -26,20 +30,15 @@ app.get('/', function (req, res) {
         } else {
             let weather = JSON.parse(body);
             db.collection('weather-api-data').insertOne(weather);
-            db.collection('weather-api-logs').insertOne({'date': today,'lat': lat,'lon': lon,'ip': ip});
-            
-            converter.json2csv(weather, (err, csv) => {
-                if (err) {
-                    res.send('failed to convert to csv').status(500);
-                }
-                res.send(csv).status(200);
-            });
+            db.collection('weather-api-logs').insertOne({ 'date': today, 'lat': lat, 'lon': lon, 'ip': ip });
+            res.send(weather).status(200);
         }
     });
 });
 
-var server = app.listen(5002, () => {
-    console.log(`Server is running on port ${5002}.`);
+var PORT = process.env.PORT || 5002;
+var server = app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}.`);
 });
 
 module.exports = server;

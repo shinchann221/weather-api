@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "json-2-csv": "^3.14.4",
     "mongoose": "^6.0.8",
     "nodemon": "^2.0.12",
     "request": "^2.88.2"
